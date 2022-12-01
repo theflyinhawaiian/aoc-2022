@@ -1,0 +1,110 @@
+So today's problem is pretty straightforward; given a list of numbers separated by newlines (with blank lines representing a new "elf"), calculate the highest amount of calories one of the elves is holding.
+
+Immediately, I start overengineering this problem, because I know there's a part two. Idk if this will be helpful or not, but I'm doing it anyway:
+
+    elves = []
+    elves.append([])
+
+My thought here is that every time I run into a blank line, I'll create a new list that contains the next set of foods, so each list in "elves" represents the food one elf is carrying.
+
+I also add in an index variable in case I need to reference a specific elf.
+
+    index = 0
+
+It's been a month since I've read a file with python, so I google it for the millionth time:
+```python file readline```
+
+and I read a bit from [here](https://docs.python.org/3/tutorial/inputoutput.html#methods-of-file-objects)
+
+    file = open("input.txt", 'r')
+    
+    line = file.readline()
+
+Cool. So I know that `file.readline()` takes all the text in a file up until the next newline character ('\n')
+
+So the way to know if I'm looking at a new elf is if I see just a newline:
+
+    if(line == "\n"):
+        # new elf stuff
+        continue
+
+And according to the documentation, if I get an empty string back, I'm at the end of the file. So now, I know what my `while` loop should be looking for:
+
+    while(line != ""):
+        # we're not at the end of the file, so we keep processing.
+
+It's about at this point that I decide that I want this thing to be super efficient; I don't want to record what all of the elves are carrying, and then loop through the elves again.
+
+I create a variable to hold the maximum number of calories we've seen so far, as well as the calories the current elf is holding.
+
+    currCount = 0
+    maxCount = 0
+
+I then think about all the stuff that needs to reset whenever we create a new elf:
+
+    # new elf is carrying nothing, so currCount = 0
+    currCount = 0
+    # we have one more elf than we did before, so index++
+    index = index + 1
+    # add a new "elf" to the elves list
+    elves.append([])
+
+And lastly, I think about what to do when we run into a number.
+
+    # convert the line into an integer. the `strip` method gets rid of whitespace. I checked on this later and found out it was unnecessary and would have worked without it.
+    num = int(line.strip())
+    # add to the current elf's amount of calories
+    currCount = currCount + num
+    # if we're carrying more than the maximum we've seen so far, update the maximum
+    if(maxCount < currCount):
+        maxCount = currCount
+    
+    # add the food item to the elf's list
+    elves[index].append(num)
+
+Boom. Should be good, right? Here's what I have put together so far:
+
+    elves = []
+
+    file = open("input.txt", 'r')
+
+    line = file.readline()
+
+    index = 0
+    currCount = 0
+    maxCount = 0
+    elves.append([])
+
+    while(line != ""):
+        if(line == "\n"):
+            currCount = 0
+            index = index + 1
+            elves.append([])
+            continue
+
+        num = int(line.strip())
+        currCount = currCount + num
+        if(maxCount < currCount):
+            maxCount = currCount
+
+        elves[index].append(num)
+
+        line = file.readline()
+
+    file.close()
+    print(maxCount)
+
+So, I run it, and instantly have an infinite loop. I do like two minutes of printing debugging statements until I realize the problem:
+
+    if(line == "\n"):
+        currCount = 0
+        index = index + 1
+        elves.append([])
+        # RIGHT HERE! If I continue and pop to the start of the loop... I never bring in the next line. so "line" is always "\n"...
+        continue
+
+embarrassing.
+
+My fix is to just update my `line` variable there and then continue. I don't *like* that solution, because i'm calling `line = file.readline()` in two spots in my loop now, which feels wrong. But I'm hacking, and my code doesn't need to be perfect. So I carry on.
+
+I run my updated solution, and poof. I get the right answer.
