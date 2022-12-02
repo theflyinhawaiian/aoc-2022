@@ -1,0 +1,137 @@
+OK, so I definitely pointlessly overengineered the first part. I don't need to track what each elf is carrying.
+
+I now need to track three top calorie counts for elves. No problem... but I'm also lazy and don't feel like sorting/maintaining a list. So I run off to google:
+
+I wanna know the easiest way to remove an item from a list. I'm pretty sure python has a "pop" method for lists that does this...
+
+```array pop python```
+
+confirmed. `list.pop(index)` does this. Very close to exactly what I want.
+
+In order to see if a calorie count should get added to the list, I need to know what the smallest number in that list is... so I google for this.
+```get minimum value in list python```
+
+`min(list)` does this exactly. perfect.
+
+Lastly, I wanna make it so when I pop off a number from the list, I don't need to know the index, and I just can pop off the same element every time I add an item to the list.
+
+In order to do that, I'll need to insert new items into the list in the proper place.
+```insert sorted python```
+
+This tells me about a neat python module named `bisect`.
+
+    import bisect
+
+    list = [1,2,3,5]
+    bisect.insort(list, 4)
+    print(list) # [1,2,3,4,5]
+
+So I pretty much have everything I need now.
+
+I'm gonna make an initial list that's full of zeroes.
+
+    maxCounts = [0,0,0]
+
+I don't like the loop I made at first. The multiple calls to `file.readline()` nag at me, so I try to think of a better way.
+
+    # This allows us to make an initial `file.readline()` call so we don't need one before the loop, either
+    done = False
+
+    # while we're not not done... we obviously loop. simple code is simple.
+    while(not done):
+        line = file.readline()
+        # now, we're worried about any time we don't have a number (because we still need to process the last elf's count)
+        if(line == "\n" or line == ""):
+            # Another minor optimization, we don't check the currCount every time we update it, because we don't want to update the maxCounts list only to update it again on the next iteration
+            if(min(maxCounts) < currCount):
+                bisect.insort(maxCounts, currCount)
+                # pop off the last element of maxCounts
+                maxCounts.pop(len(maxCounts)-1)
+            currCount = 0
+            # prevent us from running again if the line is empty (IE we're at the end of the file)
+            if(line == ""):
+                done = True
+            continue
+
+        # update the currCount
+        num = int(line.strip())
+        currCount = currCount + num
+
+Finally, since we want the total of the three max counts, we add them together.
+
+    sum = 0
+    for cals in maxCounts:
+        sum = sum + cals
+
+    print(sum)
+
+And I run. And I see some WEIRD output.
+
+The sum of the maxCount is 0.
+
+...what?
+
+OK. So clearly, the elements in maxCounts are summing to 0, which means there's something weird going on when we update the list...
+
+I add some debugging output and run it against the example input from the problem.
+
+    if(min(maxCounts) < currCount):
+        print(f"adding new count {currCount}")
+        bisect.insort(maxCounts, currCount)
+        maxCounts.pop(len(maxCounts) - 1)
+        print(maxCounts)
+
+My debug output is as follows:
+
+```adding new count 6000
+[0, 0, 0]
+adding new count 4000
+[0, 0, 0]
+adding new count 11000
+[0, 0, 0]
+adding new count 24000
+[0, 0, 0]
+adding new count 10000
+[0, 0, 0]
+0```
+
+uhhhh...
+
+ok. So I look at the code, minus debug print statements.
+
+    if(min(maxCounts) < currCount):
+        bisect.insort(maxCounts, currCount)
+        maxCounts.pop(len(maxCounts) - 1)
+
+we know that currCount is right.
+
+and we know that the array after the `pop` is definitely wrong.
+
+what happens if we don't pop?
+
+    if(min(maxCounts) < currCount):
+        bisect.insort(maxCounts, currCount)
+
+```adding new count 6000
+[0, 0, 0, 6000]
+adding new count 4000
+[0, 0, 0, 4000, 6000]
+adding new count 11000
+[0, 0, 0, 4000, 6000, 11000]
+adding new count 24000
+[0, 0, 0, 4000, 6000, 11000, 24000]
+adding new count 10000
+[0, 0, 0, 4000, 6000, 10000, 11000, 24000]
+0```
+
+oh.
+
+I'm removing the *last* element of the array.
+
+oops.
+
+    if(min(maxCounts) < currCount):
+            bisect.insort(maxCounts, currCount)
+            maxCounts.pop(0)
+
+and we run, and it works. woohoo!
