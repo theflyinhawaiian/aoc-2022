@@ -1,0 +1,93 @@
+So this problem is an interesting one!
+
+So the first thought here should be splitting the string in half, and then going character by character from the first string, and checking to see if it exists in the second string.
+
+However, this is *very* bad!
+
+imagine the worst case scenario:
+
+"aaaaaaaaabcccccccccb"
+
+You can split this up into two different strings:
+"aaaaaaaaab" and
+"cccccccccb"
+
+Now, you check to see if the first character in the first string ('a') occurs in the second string.
+
+It doesn't, so you go on to the second character. and so on, and so forth, until you get to the last character.
+
+For a string that's only 10 characters long, you need to check each character in the second string 10 times (so you need to make 100 checks).
+
+Now what happens if those strings are 10000 characters long?
+
+This is a classic example of an n^2 algorithm. We can do much better than this!
+
+So, how do we do that?
+
+Pretty simply; we can keep a list of the characters we've found in each string as we look through.
+
+To save even more time, we can parse _both_ strings at the same time:
+
+    index1 = 0
+    # using integer division here because python is being finnicky on me
+    index2 = len(str)//2
+
+    list1 = []
+    list2 = []
+
+    for i in range((len(str)//2)-1):
+        char1 = str[index1 + i]
+        char2 = str[index2 + i]
+        if char1 not in list1:
+            if char1 in list2:
+                # we've found it!
+                return char1
+            else:
+                list1.append(char1)
+        
+        if char2 not in list2:
+            if char2 in list1:
+                # we've found it!
+                return char2
+            else:
+                list2.append(char2)
+
+This seems good. Plug it into the usual file parsing code and give it a run against the test data:
+
+    file = open("..\input.txt","r")
+
+    input = " "
+
+    while input != "":
+        input = file.readline()
+        print(findCommonChar(input.strip()))
+
+    file.close()
+
+And we have an off by one error. Simple fix, and we get the right output:
+
+p
+L
+P
+v
+t
+s
+
+Huzzah. Now all we have to do is convert these characters into the proper integer values. This *should* be done easily enough with some native python function... off to google!
+
+`python convert char to int`
+
+this confirms that the `ord()` function will give us the ascii value of the character. I've totally forgotten what the ascii values are (and I'd be concerned if anyone reading this knew them by heart...), so I google again:
+
+`ascii chart`
+
+And it looks like we'll need to do some annoying math to appropriately convert these to their proper values.
+
+For lowercase characters, it'll be as simple as subtracting the number by 96. For uppercase characters, the resulting number will be negative, so we'll then adjust to using the index of the uppercase A, and then adding 26.
+
+# if this is negative, the character was uppercase
+if(ord(ch) - 96 < 0):
+    # so then we use the capital A's index (65) minus one, and add 26 (meaning capital A should come out 27, and Z should be 52.)
+    return ch - 64 + 26
+else:
+    return ch - 96
